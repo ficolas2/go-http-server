@@ -90,10 +90,14 @@ func (server *HttpServer) handleConnection(connection net.Conn) {
 	fmt.Printf("Method: %s\n", method)
 	fmt.Println("Path: " + path)
 	fmt.Println("Protocol: " + protocol)
+	var result Result
 
 	fmt.Println("Headers:")
 	for name, value := range headers {
 		fmt.Println("    " + name + ": " + value)
+	if protocol != "HTTP/1.1" {
+		fmt.Println("Unsupported protocol")
+		result = NewBadRequest("Unsupported protocol")
 	}
 	fmt.Printf("Body: \n%s\n-------", body)
 
@@ -103,7 +107,8 @@ func (server *HttpServer) handleConnection(connection net.Conn) {
 		connection.Write([]byte("HTTP/1.1 200 OK\r\n\r\n" + body))
 	} else {
 		fmt.Println("No mapping found")
-		connection.Write([]byte("HTTP/1.1 404 Not Found\r\n"))
+		result = NewNotFound("No mapping found")
 	}
 
+	connection.Write([]byte(result.String()))
 }
