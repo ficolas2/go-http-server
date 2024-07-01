@@ -131,6 +131,16 @@ func callMapping(fnValue reflect.Value, headers map[string]string, bodyStr strin
 				continue
 			}
 
+			header := fieldTag.Get("header")
+			if header != "" {
+				if value, exists := headers[header]; exists {
+					instance.Elem().Field(i).SetString(value)
+				} else if required {
+					return NewBadRequest("Header " + header + " is required")
+				}
+				continue
+			}
+
 		}
 		
 		return fnValue.Call([]reflect.Value{instance})[0].Interface().(Result)
