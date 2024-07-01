@@ -1,28 +1,30 @@
 package http
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
+	"reflect"
 	"strings"
 )
 
 type HttpServer struct {
-	mappings map[Method]map[string]func(string) string
+	mappings map[Method]map[string]reflect.Value
 }
 
-func (server *HttpServer) AddRequestMapping(method Method, path string, f func(string) string) {
+func AddRequestMapping[F any](server *HttpServer, method Method, path string, f func(*F) Result) {
 	if server.mappings == nil {
-		server.mappings = make(map[Method]map[string]func(string) string)
+		server.mappings = make(map[Method]map[string]reflect.Value)
 	}
 	if _, methodExists := server.mappings[method]; !methodExists {
-		server.mappings[method] = make(map[string]func(string) string)
+		server.mappings[method] = make(map[string]reflect.Value)
 	}
 	if _, exists := server.mappings[method][path]; exists {
 		log.Fatalf("Mapping already exists for %s %s", method, path)
 		return
 	}
-	server.mappings[method][path] = f
+	server.mappings[method][path] = reflect.ValueOf(f)
 }
 
 func (server *HttpServer) StartHttpServer() {
@@ -94,14 +96,45 @@ func (server *HttpServer) handleConnection(connection net.Conn) {
 		result = NewBadRequest("Unsupported protocol")
 	}
 
-	if _, exists := server.mappings[method][path]; exists {
-		body := server.mappings[method][path](body)
-		fmt.Println("Response body: " + body)
-		connection.Write([]byte("HTTP/1.1 200 OK\r\n\r\n" + body))
+	if f, exists := server.mappings[method][path]; exists {
+		result = callMapping(f, headers, body)
 	} else {
 		fmt.Println("No mapping found")
 		result = NewNotFound("No mapping found")
 	}
 
 	connection.Write([]byte(result.String()))
+}
+
+func callMapping(fnValue reflect.Value, headers map[string]string, bodyStr string) Result {
+	argType := fnValue.Type().In(0).Elem()
+
+	if argType.Kind() == reflect.Struct{
+		instance := reflect.New(argType)
+	
+		for i := 0; i < argType.NumField(); i++ {
+			fieldName := argType.Field(i).Name
+			fieldTag := argType.Field(i).Tag
+			fieldType := argType.Field(i).Type
+
+			required := fieldTag.Get("Required") == "true"
+
+			if fieldName == "Body" {
+				body := reflect.New(fieldType)
+				err := json.Unmarshal([]byte(bodyStr), body.Interface())
+				if err != nil {
+					fmt.Printf("Error parsing body: %s\n", err)
+					return NewBadRequest("Error parsing body")
+				}
+
+				instance.Elem().Field(i).Set(reflect.ValueOf(body.Elem().Interface()))
+				continue
+			}
+
+		}
+		
+		return fnValue.Call([]reflect.Value{instance})[0].Interface().(Result)
+	}
+
+	return NewInternalServerError("Mapping first argument is not a struct.")
 }
