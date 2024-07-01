@@ -87,19 +87,12 @@ func (server *HttpServer) handleConnection(connection net.Conn) {
 	start = start + 2
 	body := str[start:]
 
-	fmt.Printf("Method: %s\n", method)
-	fmt.Println("Path: " + path)
-	fmt.Println("Protocol: " + protocol)
 	var result Result
 
-	fmt.Println("Headers:")
-	for name, value := range headers {
-		fmt.Println("    " + name + ": " + value)
 	if protocol != "HTTP/1.1" {
 		fmt.Println("Unsupported protocol")
 		result = NewBadRequest("Unsupported protocol")
 	}
-	fmt.Printf("Body: \n%s\n-------", body)
 
 	if _, exists := server.mappings[method][path]; exists {
 		body := server.mappings[method][path](body)
