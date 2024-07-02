@@ -129,10 +129,48 @@ func TestNotFound(t *testing.T) {
 	response.Body.Close()
 }
 
-func TestBody(t *testing.T) {
-	body := `{"name": "test"}`
+func TestResponseBody(t *testing.T) {
+	json := `{"name":"test"}`
+	type Body struct {
+		Name string `json:"name"`
+	}
+
 	var server HttpServer
 	server.Port = 8082
+	AddRequestMapping(&server, GET, "/", func(request *EmptyRequest) Result {
+		return NewOk(Body{"test"})
+	})
+	go server.StartHttpServer()
+	time.Sleep(1 * time.Millisecond)
+
+	response, err := stdHttp.Get("http://localhost:8082/")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if response.StatusCode != 200 {
+		t.Errorf("Expected 200, got %d", response.StatusCode)
+		return
+	}
+
+	buffer := make([]byte, 1024)
+	n, err := response.Body.Read(buffer)
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if string(buffer[:n]) != json {
+		t.Errorf("Expected '%s', got '%s'", json, string(buffer))
+		return
+	}
+}
+
+func TestRequestBody(t *testing.T) {
+	body := `{"name": "test"}`
+	var server HttpServer
+	server.Port = 8083
 	AddRequestMapping(&server, POST, "/", func(request *TestBodyRequest) Result {
 		return NewOk(request.Body.Name)
 	})
@@ -140,7 +178,7 @@ func TestBody(t *testing.T) {
 	time.Sleep(1 * time.Millisecond)
 
 	client := &stdHttp.Client{}
-	req, err := stdHttp.NewRequest("POST", "http://localhost:8082/", strings.NewReader(body))
+	req, err := stdHttp.NewRequest("POST", "http://localhost:8083/", strings.NewReader(body))
 	if err != nil {
 		t.Error(err)
 		return
@@ -175,7 +213,7 @@ func TestBody(t *testing.T) {
 
 func TestHeaders(t *testing.T) {
 	var server HttpServer
-	server.Port = 8083
+	server.Port = 8084
 	AddRequestMapping(&server, GET, "/", func(request *TestHeaderRequest) Result {
 		return NewOk(request.Header)
 	})
