@@ -90,6 +90,18 @@ func (server *HttpServer) handleConnection(connection net.Conn) {
 	start = start + 2
 	body := str[start:]
 
+	// Process path params
+	paramStart := strings.Index(path, "?")
+	paramList := make(map[string]string)
+	if paramStart != -1 {
+		stringParamList := strings.Split(path[paramStart+1:], "&")
+		for _, param := range stringParamList {
+			split := strings.Split(param, "=")
+			paramList[split[0]] = split[1]
+		}
+		path = path[:paramStart]
+	}
+
 	var result Result
 
 	if protocol != "HTTP/1.1" {
@@ -98,15 +110,15 @@ func (server *HttpServer) handleConnection(connection net.Conn) {
 	}
 
 	if f, exists := server.mappings[method][path]; exists {
-		result = callMapping(f, headers, body)
+		result = callMapping(f, headers, body, paramList)
 	} else {
-		result = NewNotFound("No mapping found")
+		result = NewNotFound("No mapping found " + path)
 	}
 
 	connection.Write([]byte(result.String()))
 }
 
-func callMapping(fnValue reflect.Value, headers map[string]string, bodyStr string) Result {
+func callMapping(fnValue reflect.Value, headers map[string]string, bodyStr string, paramList map[string]string) Result {
 	argType := fnValue.Type().In(0).Elem()
 
 	if argType.Kind() == reflect.Struct {
@@ -123,8 +135,7 @@ func callMapping(fnValue reflect.Value, headers map[string]string, bodyStr strin
 				body := reflect.New(fieldType)
 				err := json.Unmarshal([]byte(bodyStr), body.Interface())
 				if err != nil {
-					fmt.Printf("Error parsing body: %s\nBody: \n%s", err, bodyStr)
-					return NewBadRequest("Error parsing body")
+					return NewBadRequest("Error parsing body " + err.Error())
 				}
 
 				instance.Elem().Field(i).Set(reflect.ValueOf(body.Elem().Interface()))
@@ -137,6 +148,16 @@ func callMapping(fnValue reflect.Value, headers map[string]string, bodyStr strin
 					instance.Elem().Field(i).SetString(value)
 				} else if required {
 					return NewBadRequest("Header " + header + " is required")
+				}
+				continue
+			}
+
+			param := fieldTag.Get("param")
+			if param != "" {
+				if value, exists := paramList[param]; exists {
+					instance.Elem().Field(i).SetString(value)
+				} else if required {
+					return NewBadRequest("Param " + param + " is required")
 				}
 				continue
 			}
