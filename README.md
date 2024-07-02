@@ -1,7 +1,6 @@
 A simple http server library, build from scratch, using a TCP connection.
 
-Check out **/examples** for example ussage.
-Check out **/src**, for the library code.
+Check out **/examples** for example ussage. [Here](examples/example.go)
 
 This project is not supossed to be efficient, secure, or complete. It's just a simple project to 
 learn go and networking.
