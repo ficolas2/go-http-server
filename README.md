@@ -51,6 +51,14 @@ type CustomRequest struct {
 }
 ```
 
+## Testing
+To run the tests, run:
+
+```bash
+cd src
+go test
+```
+
 ## TODO
 - TLS
 - TCP server from scratch
