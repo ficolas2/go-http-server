@@ -11,6 +11,7 @@ import (
 
 type HttpServer struct {
 	mappings map[Method]map[string]reflect.Value
+	Port	 int
 }
 
 func AddRequestMapping[F any](server *HttpServer, method Method, path string, f func(*F) Result) {
@@ -28,7 +29,7 @@ func AddRequestMapping[F any](server *HttpServer, method Method, path string, f 
 }
 
 func (server *HttpServer) StartHttpServer() {
-	listener, err := net.Listen("tcp", ":8080")
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", server.Port))
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -99,7 +100,6 @@ func (server *HttpServer) handleConnection(connection net.Conn) {
 	if f, exists := server.mappings[method][path]; exists {
 		result = callMapping(f, headers, body)
 	} else {
-		fmt.Println("No mapping found")
 		result = NewNotFound("No mapping found")
 	}
 
@@ -123,7 +123,7 @@ func callMapping(fnValue reflect.Value, headers map[string]string, bodyStr strin
 				body := reflect.New(fieldType)
 				err := json.Unmarshal([]byte(bodyStr), body.Interface())
 				if err != nil {
-					fmt.Printf("Error parsing body: %s\n", err)
+					fmt.Printf("Error parsing body: %s\nBody: \n%s", err, bodyStr)
 					return NewBadRequest("Error parsing body")
 				}
 
