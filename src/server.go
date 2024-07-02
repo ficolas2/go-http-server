@@ -11,7 +11,7 @@ import (
 
 type HttpServer struct {
 	mappings map[Method]map[string]reflect.Value
-	Port	 int
+	Port     int
 }
 
 func AddRequestMapping[F any](server *HttpServer, method Method, path string, f func(*F) Result) {
@@ -60,8 +60,8 @@ func (server *HttpServer) handleConnection(connection net.Conn) {
 	// Read request line
 	start := 0
 	length := strings.Index(str, "\r\n")
-	
-	firstLine := strings.Split(str[start : start+length], " ")
+
+	firstLine := strings.Split(str[start:start+length], " ")
 
 	method := MethodFromString(firstLine[0])
 	path := firstLine[1]
@@ -109,9 +109,9 @@ func (server *HttpServer) handleConnection(connection net.Conn) {
 func callMapping(fnValue reflect.Value, headers map[string]string, bodyStr string) Result {
 	argType := fnValue.Type().In(0).Elem()
 
-	if argType.Kind() == reflect.Struct{
+	if argType.Kind() == reflect.Struct {
 		instance := reflect.New(argType)
-	
+
 		for i := 0; i < argType.NumField(); i++ {
 			fieldName := argType.Field(i).Name
 			fieldTag := argType.Field(i).Tag
@@ -142,7 +142,7 @@ func callMapping(fnValue reflect.Value, headers map[string]string, bodyStr strin
 			}
 
 		}
-		
+
 		return fnValue.Call([]reflect.Value{instance})[0].Interface().(Result)
 	}
 

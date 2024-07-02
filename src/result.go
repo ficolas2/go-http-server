@@ -1,11 +1,13 @@
 package http
 
-import("fmt")
+import (
+	"fmt"
+)
 
 type Result struct {
 	statusCode int
-	body string
-	headers map[string]string
+	body       string
+	headers    map[string]string
 }
 
 func (self *Result) AddHeader(key, value string) {
