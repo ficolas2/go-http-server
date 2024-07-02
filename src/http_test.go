@@ -221,7 +221,7 @@ func TestHeaders(t *testing.T) {
 	time.Sleep(1 * time.Millisecond)
 
 	client := &stdHttp.Client{}
-	req, err := stdHttp.NewRequest("GET", "http://localhost:8083/", nil)
+	req, err := stdHttp.NewRequest("GET", "http://localhost:8084/", nil)
 	if err != nil {
 		t.Error(err)
 		return
@@ -248,6 +248,52 @@ func TestHeaders(t *testing.T) {
 
 	if string(buffer[:n]) != "test" {
 		t.Errorf("Expected 'test', got '%s'", string(buffer))
+		return
+	}
+}
+
+func TestPathParams(t *testing.T) {
+	type ParamRequest struct {
+		Param string `param:"param"`
+	}
+
+	var server HttpServer
+	server.Port = 8085
+	AddRequestMapping(&server, GET, "/", func(request *ParamRequest) Result {
+		return NewOk(request.Param)
+	})
+
+	go server.StartHttpServer()
+	time.Sleep(1 * time.Millisecond)
+
+	client := &stdHttp.Client{}
+	req, err := stdHttp.NewRequest("GET", "http://localhost:8085?param=param", nil)
+	
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	response, err := client.Do(req)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if response.StatusCode != 200 {
+		t.Errorf("Expected 200, got %d", response.StatusCode)
+		return
+	}
+
+	buffer := make([]byte, 1024)
+	n, err := response.Body.Read(buffer)
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if string(buffer[:n]) != "param" {
+		t.Errorf("Expected 'param', got '%s'", string(buffer))
 		return
 	}
 }
