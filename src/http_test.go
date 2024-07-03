@@ -29,13 +29,13 @@ const GET_CHILD = "get child"
 func TestRouting(t *testing.T) {
 	var server HttpServer
 	server.Port = 8080
-	AddRequestMapping(&server, GET, "/", func(request *EmptyRequest) Result {
+	AddRequestMapping(&server, GET, "/", func(request *EmptyRequest) *Result {
 		return NewOk(GET_ROOT)
 	})
-	AddRequestMapping(&server, POST, "/", func(request *EmptyRequest) Result {
+	AddRequestMapping(&server, POST, "/", func(request *EmptyRequest) *Result {
 		return NewOk(POST_ROOT)
 	})
-	AddRequestMapping(&server, GET, "/child", func(request *EmptyRequest) Result {
+	AddRequestMapping(&server, GET, "/child", func(request *EmptyRequest) *Result {
 		return NewOk(GET_CHILD)
 	})
 	go server.StartHttpServer()
@@ -137,7 +137,7 @@ func TestResponseBody(t *testing.T) {
 
 	var server HttpServer
 	server.Port = 8082
-	AddRequestMapping(&server, GET, "/", func(request *EmptyRequest) Result {
+	AddRequestMapping(&server, GET, "/", func(request *EmptyRequest) *Result {
 		return NewOk(Body{"test"})
 	})
 	go server.StartHttpServer()
@@ -171,7 +171,7 @@ func TestRequestBody(t *testing.T) {
 	body := `{"name": "test"}`
 	var server HttpServer
 	server.Port = 8083
-	AddRequestMapping(&server, POST, "/", func(request *TestBodyRequest) Result {
+	AddRequestMapping(&server, POST, "/", func(request *TestBodyRequest) *Result {
 		return NewOk(request.Body.Name)
 	})
 	go server.StartHttpServer()
@@ -214,7 +214,7 @@ func TestRequestBody(t *testing.T) {
 func TestHeaders(t *testing.T) {
 	var server HttpServer
 	server.Port = 8084
-	AddRequestMapping(&server, GET, "/", func(request *TestHeaderRequest) Result {
+	AddRequestMapping(&server, GET, "/", func(request *TestHeaderRequest) *Result {
 		return NewOk(request.Header)
 	})
 	go server.StartHttpServer()
@@ -259,7 +259,7 @@ func TestPathParams(t *testing.T) {
 
 	var server HttpServer
 	server.Port = 8085
-	AddRequestMapping(&server, GET, "/", func(request *ParamRequest) Result {
+	AddRequestMapping(&server, GET, "/", func(request *ParamRequest) *Result {
 		return NewOk(request.Param)
 	})
 

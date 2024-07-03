@@ -14,7 +14,7 @@ type HttpServer struct {
 	Port     int
 }
 
-func AddRequestMapping[F any](server *HttpServer, method Method, path string, f func(*F) Result) {
+func AddRequestMapping[F any](server *HttpServer, method Method, path string, f func(*F) *Result) {
 	if server.mappings == nil {
 		server.mappings = make(map[Method]map[string]reflect.Value)
 	}
@@ -102,7 +102,7 @@ func (server *HttpServer) handleConnection(connection net.Conn) {
 		path = path[:paramStart]
 	}
 
-	var result Result
+	var result *Result
 
 	if protocol != "HTTP/1.1" {
 		fmt.Println("Unsupported protocol")
@@ -118,7 +118,7 @@ func (server *HttpServer) handleConnection(connection net.Conn) {
 	connection.Write([]byte(result.String()))
 }
 
-func callMapping(fnValue reflect.Value, headers map[string]string, bodyStr string, paramList map[string]string) Result {
+func callMapping(fnValue reflect.Value, headers map[string]string, bodyStr string, paramList map[string]string) *Result {
 	argType := fnValue.Type().In(0).Elem()
 
 	if argType.Kind() == reflect.Struct {
@@ -164,7 +164,7 @@ func callMapping(fnValue reflect.Value, headers map[string]string, bodyStr strin
 
 		}
 
-		return fnValue.Call([]reflect.Value{instance})[0].Interface().(Result)
+		return fnValue.Call([]reflect.Value{instance})[0].Interface().(*Result)
 	}
 
 	return NewInternalServerError("Mapping first argument is not a struct.")

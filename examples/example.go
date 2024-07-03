@@ -21,7 +21,7 @@ type CustomResponseBody struct {
 func validate(body CustomRequestBody) *http.Result {
 	if body.Message == "" {
 		err := http.NewBadRequest("Message is required")
-		return &err
+		return err
 	}
 	return nil
 }
@@ -29,10 +29,10 @@ func validate(body CustomRequestBody) *http.Result {
 func main() {
 	var server http.HttpServer
 	server.Port = 8080
-	http.AddRequestMapping(&server, http.POST, "/", func(request *CustomRequest) http.Result {
+	http.AddRequestMapping(&server, http.POST, "/", func(request *CustomRequest) *http.Result {
 		err := validate(request.Body)
 		if err != nil {
-			return *err
+			return err
 		}
 		return http.NewOk(CustomResponseBody{"Hello world"})
 	})

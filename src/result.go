@@ -42,11 +42,12 @@ func (self *Result) String() string {
 	return result
 }
 
-func NewResult(statusCode int, body string) Result {
-	return Result{statusCode, body, make(map[string]string)}
+func NewResult(statusCode int, body string) *Result {
+	result := Result{statusCode, body, make(map[string]string)}
+	return &result
 }
 
-func NewOk(body interface{}) Result {
+func NewOk(body interface{}) *Result {
 	result := NewResult(200, "")
 
 	bodyType := reflect.TypeOf(body)
@@ -66,14 +67,14 @@ func NewOk(body interface{}) Result {
 	return result
 }
 
-func NewBadRequest(body string) Result {
+func NewBadRequest(body string) *Result {
 	return NewResult(400, body)
 }
 
-func NewNotFound(body string) Result {
+func NewNotFound(body string) *Result {
 	return NewResult(404, body)
 }
 
-func NewInternalServerError(body string) Result {
+func NewInternalServerError(body string) *Result {
 	return NewResult(500, body)
 }
