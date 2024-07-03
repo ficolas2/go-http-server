@@ -1,8 +1,8 @@
 A simple http server library, build from scratch, using a TCP connection.
 
-Check out **/examples** for example ussage. [Here](examples/example.go)
+Check out **/examples** for example usage. [Here](examples/example.go)
 
-This project is not supossed to be efficient, secure, or complete. It's just a simple project to 
+This project is not suppossed to be efficient, secure, or complete. It's just a simple project to 
 learn go and networking.
 
 - [Features](#Features)
