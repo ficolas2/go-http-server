@@ -29,6 +29,7 @@ func validate(body CustomRequestBody) *http.Result {
 func main() {
 	var server http.HttpServer
 	server.Port = 8080
+	server.SslPort = 8081
 	http.AddRequestMapping(&server, http.POST, "/", func(request *CustomRequest) *http.Result {
 		err := validate(request.Body)
 		if err != nil {
@@ -36,5 +37,5 @@ func main() {
 		}
 		return http.NewOk(CustomResponseBody{"Hello world"})
 	})
-	server.StartHttpServer()
+	server.ListenAndServe()
 }

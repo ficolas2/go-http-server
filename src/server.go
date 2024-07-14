@@ -7,11 +7,13 @@ import (
 	"net"
 	"reflect"
 	"strings"
+	"github.com/ficolas2/http-server/tls"
 )
 
 type HttpServer struct {
 	mappings map[Method]map[string]reflect.Value
 	Port     int
+	SslPort  int
 }
 
 func AddRequestMapping[F any](server *HttpServer, method Method, path string, f func(*F) *Result) {
@@ -28,25 +30,58 @@ func AddRequestMapping[F any](server *HttpServer, method Method, path string, f 
 	server.mappings[method][path] = reflect.ValueOf(f)
 }
 
-func (server *HttpServer) StartHttpServer() {
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", server.Port))
-	if err != nil {
-		log.Fatal(err)
+func (server *HttpServer) ListenAndServe() {
+	if server.Port == 0 && server.SslPort == 0 {
+		log.Fatal("No ports configured. Set the Port or SslPort field in the HttpServer.")
 		return
 	}
 
-	for {
-		connection, err := listener.Accept()
-		if err != nil {
-			log.Fatal(err)
-			continue
-		}
+	if server.Port != 0 {
+		println("Starting HTTP server on port ", server.Port)
+		go func() {
+			listener, err := net.Listen("tcp", fmt.Sprintf(":%d", server.Port))
+			if err != nil {
+				log.Fatal(err)
+				return
+			}
 
-		go server.handleConnection(connection)
+			for {
+				connection, err := listener.Accept()
+				if err != nil {
+					log.Fatal(err)
+					continue
+				}
+
+				go server.handleConnection(connection, false)
+			}
+		}()
 	}
+
+	if server.SslPort != 0 {
+		println("Starting HTTPS server on port ", server.SslPort)
+		go func() {
+			listener, err := net.Listen("tcp", fmt.Sprintf(":%d", server.SslPort))
+			if err != nil {
+				log.Fatal(err)
+				return
+			}
+
+			for {
+				connection, err := listener.Accept()
+				if err != nil {
+					log.Fatal(err)
+					continue
+				}
+
+				go tls.HandleConnection(connection)
+			}
+		}()
+	}
+
+	select {}
 }
 
-func (server *HttpServer) handleConnection(connection net.Conn) {
+func (server *HttpServer) handleConnection(connection net.Conn, ssl bool) {
 	defer connection.Close()
 
 	buf := make([]byte, 8192)
@@ -56,6 +91,11 @@ func (server *HttpServer) handleConnection(connection net.Conn) {
 		return
 	}
 	str := string(buf[:n])
+
+	if ssl {
+		//print hex like this 00 00 00 00 
+		return
+	}
 
 	// Read request line
 	start := 0

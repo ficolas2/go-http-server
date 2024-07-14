@@ -11,6 +11,7 @@ learn go and networking.
     - [Add request mappings](#Add-request-mappings)
         - [Request fields](#Request-fields)
         - [Response](#Response)
+- [References](#References)
 - [Testing](#Testing)
 
 ## Features
@@ -19,17 +20,18 @@ learn go and networking.
 - Headers and path parameters parsing
 - Demarshalling of request JSON body
 - Marshalling of response JSON body
+- TLS (WIP)
 
 ## Library overview
 ### Start and configure the server
 To create a server, you need to create a new instance of the HttpServer struct, and call
-StartHttpServer() method.
+ListenAndServe() method.
 
 ```go
 func main() {
     var server http.HttpServer
     server.Port = 8080
-    server.StartHttpServer()
+    server.ListenAndServe()
 }
 ```
 
@@ -91,6 +93,14 @@ To run the tests, run:
 cd src
 go test
 ```
+
+## References
+### HTTP
+- https://datatracker.ietf.org/doc/html/rfc2616
+
+### TLS
+- https://tls12.xargs.org/#client-hello
+- https://datatracker.ietf.org/doc/rfc5246/
 
 ## TODO
 - TLS
